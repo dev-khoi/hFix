@@ -1,0 +1,52 @@
+# Byte-compiled / cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.env
+.env/
+.venv/
+env/
+venv/
+
+# Packaging / build
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Logs / coverage / pytest
+*.log
+.coverage*
+.pytest_cache/
+htmlcov/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Mac / Windows noise
+.DS_Store
+Thumbs.db
+
+# Local secrets (boto3/ AWS)
+.aws/           # shared credentials/config
+*.pem
+*.key
+*.crt
+*.p12
+.env.*          # per-env dotenv files
+*.tfstate*
+*.tfstate.backup
+
+# Cache from AWS tools
+.aws-sam/
+.sls-next/
+.serverless/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb-*
