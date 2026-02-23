@@ -1,4 +1,4 @@
-# Byte-compiled / cache
+# --- Backend: Python ---
 __pycache__/
 *.py[cod]
 *$py.class
@@ -28,21 +28,21 @@ htmlcov/
 *.swp
 *.swo
 
-# Mac / Windows noise
+# OS noise
 .DS_Store
 Thumbs.db
 
-# Local secrets (boto3/ AWS)
-.aws/           # shared credentials/config
+# Local secrets / AWS
+.aws/                  # shared credentials/config
 *.pem
 *.key
 *.crt
 *.p12
-.env.*          # per-env dotenv files
+.env.*                 # per-env dotenv files
 *.tfstate*
 *.tfstate.backup
 
-# Cache from AWS tools
+# AWS tool caches
 .aws-sam/
 .sls-next/
 .serverless/
@@ -50,3 +50,56 @@ Thumbs.db
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb-*
+
+# --- Frontend: React Native / Expo ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json.*    # npm’s conflict backups
+.expo/
+.expo-shared/
+.expo/**/*
+.expo-shared/**/*
+.expo/web-cache/
+.expo/web-build/
+
+# Metro / haste / bundler caches
+*.metro-bundler-cache/
+metro-cache/
+*.tmp
+*.tsbuildinfo
+
+# Android
+android/.gradle/
+android/.idea/
+android/app/build/
+android/.settings/
+android/local.properties
+android/.project
+android/.classpath
+android/captures/
+*.apk
+*.keystore
+
+# iOS
+ios/Pods/
+ios/build/
+ios/DerivedData/
+ios/*.xcworkspace
+*.xcuserstate
+*.mode1v3
+*.mode2v3
+*.pbxuser
+*.xccheckout
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Misc
+*.iml
+*.orig
+*.patch
