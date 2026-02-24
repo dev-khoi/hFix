@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Lambda function for image upload and analysis
+
+Resources:
+  UploadImageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/uploadImage/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Timeout: 30
+      Environment:
+        Variables:
+          S3_BUCKET_NAME: !Ref UploadImageBucket
+      Events:
+        UploadImageApi:
+          Type: Api
+          Properties:
+            Path: /uploadImage
+            Method: post
+      Policies:
+        - S3CrudPolicy:
+            BucketName: !Ref UploadImageBucket
+        - Statement:
+            - Effect: Allow
+              Action:
+                - bedrock:InvokeModel
+              Resource: "*"
+
+  UploadImageBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+
+Outputs:
+  UploadImageApi:
+    Description: "API Gateway endpoint URL for image upload function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/upload-image/"
+  UploadImageFunction:
+    Description: "Upload Image Lambda Function ARN"
+    Value: !GetAtt UploadImageFunction.Arn
+  UploadImageBucket:
+    Description: "S3 bucket for uploaded images and analysis results"
+    Value: !Ref UploadImageBucket
