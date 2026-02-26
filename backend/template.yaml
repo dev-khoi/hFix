@@ -19,6 +19,7 @@ Resources:
       Environment:
         Variables:
           S3_BUCKET_NAME: !Ref UploadImageBucket
+          TABLE_NAME: !Ref UploadImageTable
       Events:
         UploadImageApi:
           Type: Api
@@ -28,6 +29,8 @@ Resources:
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref UploadImageBucket
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UploadImageTable
         - Statement:
             - Effect: Allow
               Action:
@@ -36,6 +39,18 @@ Resources:
 
   UploadImageBucket:
     Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+
+  UploadImageTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
     DeletionPolicy: Delete
 
 Outputs:
@@ -48,3 +63,6 @@ Outputs:
   UploadImageBucket:
     Description: "S3 bucket for uploaded images and analysis results"
     Value: !Ref UploadImageBucket
+  UploadImageTable:
+    Description: "DynamoDB table for upload metadata"
+    Value: !Ref UploadImageTable

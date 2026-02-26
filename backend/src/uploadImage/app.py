@@ -5,6 +5,7 @@ import uuid
 import os
 import boto3
 from imageAnalyzeBot import ai_image_analyze
+import datetime
 
 s3 = boto3.client("s3", region_name="us-east-1")
 dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
@@ -37,17 +38,17 @@ def lambda_handler(event, context):
         Body=analysis_result.encode("utf-8"),
         ContentType="text/plain",
     )
+    created_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
     table.put_item(
         Item={
             "id": file_id,
             "imageKey": image_key,
             "analysisKey": analysis_key,
-            "createdAt": str(datetime.timezone.utc),
+            "createdAt": created_at,
             "userId": event.get("requestContext", {})
             .get("identity", {})
             .get("cognitoIdentityId", "anonymous"),
-
             # identity
         }
     )

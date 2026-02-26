@@ -1,17 +1,17 @@
-import { useRef, useCallback, useState } from 'react';
+import { useRef, useCallback, useState } from "react";
 import {
   BedrockRuntimeClient,
   InvokeModelWithBidirectionalStreamCommand,
-} from '@aws-sdk/client-bedrock-runtime';
-import { fetchAuthSession } from 'aws-amplify/auth';
+} from "@aws-sdk/client-bedrock-runtime";
+import { fetchAuthSession } from "aws-amplify/auth";
 
-const MODEL_ID = 'amazon.nova-2-sonic-v1:0';
-const REGION = 'us-east-1';
+const MODEL_ID = "amazon.nova-2-sonic-v1:0";
+const REGION = "us-east-1";
 
-type SessionState = 'disconnected' | 'connecting' | 'connected' | 'error';
+type SessionState = "disconnected" | "connecting" | "connected" | "error";
 
 interface Transcript {
-  role: 'user' | 'assistant';
+  role: "user" | "assistant";
   content: string;
 }
 
@@ -43,7 +43,7 @@ function createEventChunk(event: object): { chunk: { bytes: Uint8Array } } {
 
 // Diagnostic logger
 function log(step: string, data?: any) {
-  const timestamp = new Date().toISOString().split('T')[1];
+  const timestamp = new Date().toISOString().split("T")[1];
   if (data !== undefined) {
     console.log(`[${timestamp}] [NovaSonic] ${step}:`, data);
   } else {
@@ -51,19 +51,22 @@ function log(step: string, data?: any) {
   }
 }
 
-export function useNovaSonic(options: UseNovaSonicOptions = {}): UseNovaSonicReturn {
-  console.log('[NovaSonic] Hook initialized');
+export function useNovaSonic(
+  options: UseNovaSonicOptions = {},
+): UseNovaSonicReturn {
+  console.log("[NovaSonic] Hook initialized");
   const { onAudioOutput, onTranscript, onStateChange, onError } = options;
 
-  const [sessionState, setSessionState] = useState<SessionState>('disconnected');
+  const [sessionState, setSessionState] =
+    useState<SessionState>("disconnected");
   const [transcripts, setTranscripts] = useState<Transcript[]>([]);
 
   const clientRef = useRef<BedrockRuntimeClient | null>(null);
   const isActiveRef = useRef(false);
-  const promptNameRef = useRef<string>('');
-  const audioContentNameRef = useRef<string>('');
-  const currentRoleRef = useRef<'user' | 'assistant'>('user');
-  const sessionIdRef = useRef<string>('');
+  const promptNameRef = useRef<string>("");
+  const audioContentNameRef = useRef<string>("");
+  const currentRoleRef = useRef<"user" | "assistant">("user");
+  const sessionIdRef = useRef<string>("");
 
   // Stream control - using a class to ensure proper isolation
   const streamControlRef = useRef<{
@@ -78,13 +81,13 @@ export function useNovaSonic(options: UseNovaSonicOptions = {}): UseNovaSonicRet
       setSessionState(state);
       onStateChange?.(state);
     },
-    [onStateChange, sessionState]
+    [onStateChange, sessionState],
   );
 
   const generateUUID = () => {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
       const r = (Math.random() * 16) | 0;
-      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      const v = c === "x" ? r : (r & 0x3) | 0x8;
       return v.toString(16);
     });
   };
@@ -92,7 +95,7 @@ export function useNovaSonic(options: UseNovaSonicOptions = {}): UseNovaSonicRet
   const pushEvent = useCallback((event: object) => {
     const control = streamControlRef.current;
     if (!control) {
-      log('ERROR: No stream control - cannot push event');
+      log("ERROR: No stream control - cannot push event");
       return;
     }
 
@@ -100,7 +103,7 @@ export function useNovaSonic(options: UseNovaSonicOptions = {}): UseNovaSonicRet
     const eventName = Object.keys((event as any).event)[0];
 
     // Only log non-audio events to reduce noise
-    if (eventName !== 'audioInput') {
+    if (eventName !== "audioInput") {
       log(`Push event: ${eventName}`);
     }
 
@@ -113,10 +116,10 @@ export function useNovaSonic(options: UseNovaSonicOptions = {}): UseNovaSonicRet
   }, []);
 
   const createClient = useCallback(async () => {
-    log('Step 1: Fetching auth session...');
+    log("Step 1: Fetching auth session...");
     const session = await fetchAuthSession();
 
-    log('Step 2: Auth session received', {
+    log("Step 2: Auth session received", {
       hasTokens: !!session.tokens,
       hasCredentials: !!session.credentials,
       identityId: session.identityId,
@@ -124,16 +127,19 @@ export function useNovaSonic(options: UseNovaSonicOptions = {}): UseNovaSonicRet
 
     const credentials = session.credentials;
     if (!credentials) {
-      throw new Error('No credentials available. Please sign in.');
+      throw new Error("No credentials available. Please sign in.");
     }
 
-    log('Step 3: Credentials available', {
-      accessKeyId: credentials.accessKeyId?.substring(0, 8) + '...',
+    log("Step 3: Credentials available", {
+      accessKeyId: credentials.accessKeyId?.substring(0, 8) + "...",
       hasSecretKey: !!credentials.secretAccessKey,
       hasSessionToken: !!credentials.sessionToken,
     });
 
-    log('Step 4: Creating BedrockRuntimeClient', { region: REGION, modelId: MODEL_ID });
+    log("Step 4: Creating BedrockRuntimeClient", {
+      region: REGION,
+      modelId: MODEL_ID,
+    });
 
     const client = new BedrockRuntimeClient({
       region: REGION,
@@ -144,7 +150,7 @@ export function useNovaSonic(options: UseNovaSonicOptions = {}): UseNovaSonicRet
       },
     });
 
-    log('Step 5: BedrockRuntimeClient created successfully');
+    log("Step 5: BedrockRuntimeClient created successfully");
     return client;
   }, []);
 
@@ -154,9 +160,9 @@ export function useNovaSonic(options: UseNovaSonicOptions = {}): UseNovaSonicRet
     const audioContentName = audioContentNameRef.current;
 
     const systemPrompt =
-      'You are a friendly assistant. The user and you will engage in a spoken dialog ' +
-      'exchanging the transcripts of a natural real-time conversation. Keep your responses short, ' +
-      'generally two or three sentences for chatty scenarios.';
+      "You are a friendly assistant. The user and you will engage in a spoken dialog " +
+      "exchanging the transcripts of a natural real-time conversation. Keep your responses short, " +
+      "generally two or three sentences for chatty scenarios.";
 
     return [
       {
@@ -175,16 +181,16 @@ export function useNovaSonic(options: UseNovaSonicOptions = {}): UseNovaSonicRet
           promptStart: {
             promptName,
             textOutputConfiguration: {
-              mediaType: 'text/plain',
+              mediaType: "text/plain",
             },
             audioOutputConfiguration: {
-              mediaType: 'audio/lpcm',
+              mediaType: "audio/lpcm",
               sampleRateHertz: 24000,
               sampleSizeBits: 16,
               channelCount: 1,
-              voiceId: 'matthew',
-              encoding: 'base64',
-              audioType: 'SPEECH',
+              voiceId: "matthew",
+              encoding: "base64",
+              audioType: "SPEECH",
             },
           },
         },
@@ -194,11 +200,11 @@ export function useNovaSonic(options: UseNovaSonicOptions = {}): UseNovaSonicRet
           contentStart: {
             promptName,
             contentName,
-            type: 'TEXT',
+            type: "TEXT",
             interactive: true,
-            role: 'SYSTEM',
+            role: "SYSTEM",
             textInputConfiguration: {
-              mediaType: 'text/plain',
+              mediaType: "text/plain",
             },
           },
         },
@@ -225,16 +231,16 @@ export function useNovaSonic(options: UseNovaSonicOptions = {}): UseNovaSonicRet
           contentStart: {
             promptName,
             contentName: audioContentName,
-            type: 'AUDIO',
+            type: "AUDIO",
             interactive: true,
-            role: 'USER',
+            role: "USER",
             audioInputConfiguration: {
-              mediaType: 'audio/lpcm',
+              mediaType: "audio/lpcm",
               sampleRateHertz: 16000,
               sampleSizeBits: 16,
               channelCount: 1,
-              audioType: 'SPEECH',
-              encoding: 'base64',
+              audioType: "SPEECH",
+              encoding: "base64",
             },
           },
         },
@@ -242,111 +248,134 @@ export function useNovaSonic(options: UseNovaSonicOptions = {}): UseNovaSonicRet
     ];
   }, []);
 
-  const processResponseStream = useCallback(async (responseStream: AsyncIterable<any>, sid: string) => {
-    log(`[${sid}] Starting response stream processing...`);
+  const processResponseStream = useCallback(
+    async (responseStream: AsyncIterable<any>, sid: string) => {
+      log(`[${sid}] Starting response stream processing...`);
 
-    try {
-      let eventCount = 0;
-      for await (const event of responseStream) {
-        if (!isActiveRef.current || sessionIdRef.current !== sid) {
-          log(`[${sid}] Session no longer active, stopping`);
-          break;
-        }
-
-        eventCount++;
-
-        // Log raw event structure for debugging
-        const eventKeys = Object.keys(event || {});
-        log(`[${sid}] Raw event #${eventCount} keys:`, eventKeys);
-
-        // Handle different event formats from the SDK
-        let jsonResponse: any = null;
-
-        // Format 1: event.chunk.bytes (raw bytes)
-        if (event.chunk?.bytes) {
-          try {
-            const textResponse = new TextDecoder().decode(event.chunk.bytes);
-            jsonResponse = JSON.parse(textResponse);
-          } catch (e) {
-            log(`[${sid}] Could not parse chunk.bytes as JSON`);
+      try {
+        let eventCount = 0;
+        for await (const event of responseStream) {
+          if (!isActiveRef.current || sessionIdRef.current !== sid) {
+            log(`[${sid}] Session no longer active, stopping`);
+            break;
           }
-        }
 
-        // Format 2: event.output (SDK deserialized) - only if Format 1 didn't work
-        if (!jsonResponse && event.output) {
-          jsonResponse = { event: event.output };
-          log(`[${sid}] Using event.output format`);
-        }
+          eventCount++;
 
-        // Format 3: Direct event properties (SDK fully deserialized)
-        if (!jsonResponse && (event.sessionStart || event.promptStart || event.contentStart ||
-            event.textOutput || event.audioOutput || event.contentEnd || event.promptEnd || event.sessionEnd)) {
-          jsonResponse = { event };
-          log(`[${sid}] Using direct event format`);
-        }
+          // Log raw event structure for debugging
+          const eventKeys = Object.keys(event || {});
+          log(`[${sid}] Raw event #${eventCount} keys:`, eventKeys);
 
-        if (jsonResponse?.event) {
-          const eventType = Object.keys(jsonResponse.event)[0] || 'unknown';
-          log(`[${sid}] Received event #${eventCount}: ${eventType}`);
+          // Handle different event formats from the SDK
+          let jsonResponse: any = null;
 
-          if (jsonResponse.event.contentStart) {
-            const role = jsonResponse.event.contentStart.role?.toLowerCase();
-            if (role === 'user' || role === 'assistant') {
-              currentRoleRef.current = role;
-              log(`[${sid}] Role set to: ${role}`);
+          // Format 1: event.chunk.bytes (raw bytes)
+          if (event.chunk?.bytes) {
+            try {
+              const textResponse = new TextDecoder().decode(event.chunk.bytes);
+              jsonResponse = JSON.parse(textResponse);
+            } catch (e) {
+              log(`[${sid}] Could not parse chunk.bytes as JSON`);
             }
-          } else if (jsonResponse.event.textOutput) {
-            const content = jsonResponse.event.textOutput.content;
-            const role = currentRoleRef.current;
+          }
 
-            if (content && !content.includes('{ "interrupted" : true }')) {
-              log(`[${sid}] Text output (${role}): ${content.substring(0, 50)}...`);
-              const transcript: Transcript = { role, content };
-              setTranscripts((prev) => {
-                // Check for duplicate - don't add if last message already ends with this content
-                if (prev.length > 0 && prev[prev.length - 1].role === role) {
-                  const lastContent = prev[prev.length - 1].content;
-                  // Skip if this content is already at the end (duplicate)
-                  if (lastContent.endsWith(content)) {
-                    return prev;
+          // Format 2: event.output (SDK deserialized) - only if Format 1 didn't work
+          if (!jsonResponse && event.output) {
+            jsonResponse = { event: event.output };
+            log(`[${sid}] Using event.output format`);
+          }
+
+          // Format 3: Direct event properties (SDK fully deserialized)
+          if (
+            !jsonResponse &&
+            (event.sessionStart ||
+              event.promptStart ||
+              event.contentStart ||
+              event.textOutput ||
+              event.audioOutput ||
+              event.contentEnd ||
+              event.promptEnd ||
+              event.sessionEnd)
+          ) {
+            jsonResponse = { event };
+            log(`[${sid}] Using direct event format`);
+          }
+
+          if (jsonResponse?.event) {
+            const eventType = Object.keys(jsonResponse.event)[0] || "unknown";
+            log(`[${sid}] Received event #${eventCount}: ${eventType}`);
+
+            if (jsonResponse.event.contentStart) {
+              const role = jsonResponse.event.contentStart.role?.toLowerCase();
+              if (role === "user" || role === "assistant") {
+                currentRoleRef.current = role;
+                log(`[${sid}] Role set to: ${role}`);
+              }
+            } else if (jsonResponse.event.textOutput) {
+              const content = jsonResponse.event.textOutput.content;
+              const role = currentRoleRef.current;
+
+              if (content && !content.includes('{ "interrupted" : true }')) {
+                log(
+                  `[${sid}] Text output (${role}): ${content.substring(0, 50)}...`,
+                );
+                const transcript: Transcript = { role, content };
+                setTranscripts((prev) => {
+                  // Check for duplicate - don't add if last message already ends with this content
+                  if (prev.length > 0 && prev[prev.length - 1].role === role) {
+                    const lastContent = prev[prev.length - 1].content;
+                    // Skip if this content is already at the end (duplicate)
+                    if (lastContent.endsWith(content)) {
+                      return prev;
+                    }
+                    const updated = [...prev];
+                    updated[updated.length - 1] = {
+                      ...updated[updated.length - 1],
+                      content: lastContent + content,
+                    };
+                    return updated;
                   }
-                  const updated = [...prev];
-                  updated[updated.length - 1] = {
-                    ...updated[updated.length - 1],
-                    content: lastContent + content,
-                  };
-                  return updated;
-                }
-                return [...prev, transcript];
-              });
-              onTranscript?.(transcript);
+                  return [...prev, transcript];
+                });
+                onTranscript?.(transcript);
+              }
+            } else if (jsonResponse.event.audioOutput) {
+              const audioContent = jsonResponse.event.audioOutput.content;
+              if (audioContent) {
+                log(
+                  `[${sid}] Audio output received, length: ${audioContent.length}`,
+                );
+                onAudioOutput?.(audioContent);
+              }
             }
-          } else if (jsonResponse.event.audioOutput) {
-            const audioContent = jsonResponse.event.audioOutput.content;
-            if (audioContent) {
-              log(`[${sid}] Audio output received, length: ${audioContent.length}`);
-              onAudioOutput?.(audioContent);
-            }
+          } else {
+            log(
+              `[${sid}] Unrecognized event format:`,
+              JSON.stringify(event).substring(0, 200),
+            );
           }
-        } else {
-          log(`[${sid}] Unrecognized event format:`, JSON.stringify(event).substring(0, 200));
+        }
+        log(`[${sid}] Response stream ended, processed ${eventCount} events`);
+      } catch (err: any) {
+        // Don't treat $unknown errors as fatal - the SDK may not recognize all Nova Sonic events
+        if (err?.message?.includes("$unknown")) {
+          log(
+            `[${sid}] SDK encountered unknown event type (non-fatal):`,
+            err.message,
+          );
+          return;
+        }
+        log(`[${sid}] Response stream error:`, err);
+        if (isActiveRef.current && sessionIdRef.current === sid) {
+          const message =
+            err instanceof Error ? err.message : "Stream processing error";
+          onError?.(message);
+          updateState("error");
         }
       }
-      log(`[${sid}] Response stream ended, processed ${eventCount} events`);
-    } catch (err: any) {
-      // Don't treat $unknown errors as fatal - the SDK may not recognize all Nova Sonic events
-      if (err?.message?.includes('$unknown')) {
-        log(`[${sid}] SDK encountered unknown event type (non-fatal):`, err.message);
-        return;
-      }
-      log(`[${sid}] Response stream error:`, err);
-      if (isActiveRef.current && sessionIdRef.current === sid) {
-        const message = err instanceof Error ? err.message : 'Stream processing error';
-        onError?.(message);
-        updateState('error');
-      }
-    }
-  }, [onAudioOutput, onTranscript, onError, updateState]);
+    },
+    [onAudioOutput, onTranscript, onError, updateState],
+  );
 
   const startSession = useCallback(async () => {
     const sid = generateUUID().substring(0, 8);
@@ -360,7 +389,7 @@ export function useNovaSonic(options: UseNovaSonicOptions = {}): UseNovaSonicRet
         closed: false,
       };
 
-      updateState('connecting');
+      updateState("connecting");
       isActiveRef.current = true;
       sessionIdRef.current = sid;
       promptNameRef.current = generateUUID();
@@ -390,9 +419,15 @@ export function useNovaSonic(options: UseNovaSonicOptions = {}): UseNovaSonicRet
           return;
         }
 
-        log(`[${sid}] AsyncGenerator: Started, initial queue: ${ctrl.eventQueue.length}`);
+        log(
+          `[${sid}] AsyncGenerator: Started, initial queue: ${ctrl.eventQueue.length}`,
+        );
 
-        while (isActiveRef.current && sessionIdRef.current === sid && !ctrl.closed) {
+        while (
+          isActiveRef.current &&
+          sessionIdRef.current === sid &&
+          !ctrl.closed
+        ) {
           // Yield all queued events
           while (ctrl.eventQueue.length > 0) {
             const event = ctrl.eventQueue.shift();
@@ -417,7 +452,9 @@ export function useNovaSonic(options: UseNovaSonicOptions = {}): UseNovaSonicRet
 
       const inputStream = createInputStream();
 
-      log(`[${sid}] Step 10: Creating InvokeModelWithBidirectionalStreamCommand`);
+      log(
+        `[${sid}] Step 10: Creating InvokeModelWithBidirectionalStreamCommand`,
+      );
       const command = new InvokeModelWithBidirectionalStreamCommand({
         modelId: MODEL_ID,
         body: inputStream,
@@ -428,7 +465,7 @@ export function useNovaSonic(options: UseNovaSonicOptions = {}): UseNovaSonicRet
       log(`[${sid}] Step 12: Response received!`, { hasBody: !!response.body });
 
       if (!response.body) {
-        throw new Error('No response body received from Bedrock');
+        throw new Error("No response body received from Bedrock");
       }
 
       // Start processing responses
@@ -436,28 +473,38 @@ export function useNovaSonic(options: UseNovaSonicOptions = {}): UseNovaSonicRet
       processResponseStream(response.body, sid);
 
       log(`[${sid}] Step 14: Session connected successfully!`);
-      updateState('connected');
+      updateState("connected");
     } catch (err: any) {
       log(`[${sid}] ERROR in startSession:`, {
         message: err?.message,
         name: err?.name,
         code: err?.$metadata?.httpStatusCode,
         requestId: err?.$metadata?.requestId,
-        stack: err?.stack?.split('\n').slice(0, 5),
+        stack: err?.stack?.split("\n").slice(0, 5),
       });
 
-      const message = err instanceof Error ? err.message : 'Failed to start session';
+      const message =
+        err instanceof Error ? err.message : "Failed to start session";
       onError?.(message);
-      updateState('error');
+      updateState("error");
       isActiveRef.current = false;
-      sessionIdRef.current = '';
+      sessionIdRef.current = "";
     }
-  }, [createClient, buildInitializationEvents, processResponseStream, updateState, onError]);
+  }, [
+    createClient,
+    buildInitializationEvents,
+    processResponseStream,
+    updateState,
+    onError,
+  ]);
 
   const sendAudio = useCallback(
     (base64Audio: string) => {
-      if (!isActiveRef.current || sessionState !== 'connected') {
-        log('sendAudio: not active or not connected', { isActive: isActiveRef.current, state: sessionState });
+      if (!isActiveRef.current || sessionState !== "connected") {
+        log("sendAudio: not active or not connected", {
+          isActive: isActiveRef.current,
+          state: sessionState,
+        });
         return;
       }
 
@@ -471,7 +518,7 @@ export function useNovaSonic(options: UseNovaSonicOptions = {}): UseNovaSonicRet
         },
       });
     },
-    [pushEvent, sessionState]
+    [pushEvent, sessionState],
   );
 
   // Signal end of current audio input (user released mic) without ending session
@@ -500,16 +547,16 @@ export function useNovaSonic(options: UseNovaSonicOptions = {}): UseNovaSonicRet
         contentStart: {
           promptName: promptNameRef.current,
           contentName: audioContentNameRef.current,
-          type: 'AUDIO',
+          type: "AUDIO",
           interactive: true,
-          role: 'USER',
+          role: "USER",
           audioInputConfiguration: {
-            mediaType: 'audio/lpcm',
+            mediaType: "audio/lpcm",
             sampleRateHertz: 16000,
             sampleSizeBits: 16,
             channelCount: 1,
-            audioType: 'SPEECH',
-            encoding: 'base64',
+            audioType: "SPEECH",
+            encoding: "base64",
           },
         },
       },
@@ -520,7 +567,7 @@ export function useNovaSonic(options: UseNovaSonicOptions = {}): UseNovaSonicRet
 
   const endSession = useCallback(async () => {
     if (!isActiveRef.current) {
-      log('endSession: already inactive');
+      log("endSession: already inactive");
       return;
     }
 
@@ -572,8 +619,8 @@ export function useNovaSonic(options: UseNovaSonicOptions = {}): UseNovaSonicRet
     }
 
     clientRef.current = null;
-    sessionIdRef.current = '';
-    updateState('disconnected');
+    sessionIdRef.current = "";
+    updateState("disconnected");
   }, [pushEvent, updateState]);
 
   return {

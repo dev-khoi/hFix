@@ -1,3 +1,4 @@
+"use client";
 import {
   useState,
   useRef,
@@ -14,6 +15,8 @@ export default function PictureUpload() {
   const [isDragging, setIsDragging] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<File | null>(null);
   const dragCounter = useRef(0);
@@ -29,6 +32,7 @@ export default function PictureUpload() {
       return;
     }
     if (fileRef) fileRef.current = file;
+    setSelectedFile(file);
     const url = URL.createObjectURL(file);
     setPreview(url);
   }
@@ -64,6 +68,7 @@ export default function PictureUpload() {
 
   function clearSelection() {
     if (fileRef) fileRef.current = null;
+    setSelectedFile(null);
     setPreview(null);
     setError(null);
   }
@@ -81,6 +86,7 @@ export default function PictureUpload() {
           "w-full h-64",
           "border-2 border-dashed rounded-2xl",
           "cursor-pointer transition-colors duration-200 group",
+          isUploading && "opacity-50 pointer-events-none",
           isDragging
             ? "border-blue-500 bg-blue-50 scale-[1.01]"
             : "border-gray-400 bg-gray-50 hover:bg-gray-100",
@@ -157,15 +163,26 @@ export default function PictureUpload() {
           Remove image
         </button>
       )}
-      {fileRef.current && (
+      {selectedFile && (
         <button
-          type="submit"
-          onClick={() => {
+          type="button"
+          disabled={isUploading}
+          onClick={async () => {
             if (fileRef.current) {
-              uploadImage(fileRef.current);
+              setIsUploading(true);
+              try {
+                await uploadImage(fileRef.current);
+              } finally {
+                setIsUploading(false);
+              }
             }
-          }}>
-          Upload
+          }}
+          className={`px-4 py-2 rounded-lg font-medium transition-all ${
+            isUploading
+              ? "bg-gray-400 text-white cursor-not-allowed opacity-60"
+              : "bg-blue-500 text-white hover:bg-blue-600 active:scale-95"
+          }`}>
+          {isUploading ? "Uploading..." : "Upload"}
         </button>
       )}
     </div>

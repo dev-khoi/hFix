@@ -1,9 +1,11 @@
+"use client";
 import { Authenticator } from "@aws-amplify/ui-react";
 import "@aws-amplify/ui-react/styles.css";
 import "./App.css";
+import PictureUpload from "@/components/pictureUpload/pictureUpload";
+import { VoiceChat } from "@/components/VoiceChat";
 
-
-function App() {
+function Home() {
   return (
     <Authenticator>
       {({ signOut, user }) => (
@@ -30,4 +32,4 @@ function App() {
   );
 }
 
-export default App;
+export default Home;
