@@ -85,7 +85,6 @@ class NovaSonicBridge:
         self._response_task: asyncio.Task | None = None
         self._keepalive_task: asyncio.Task | None = None
         self._audio_started = False
-        self._audio_data_sent = False  # True once at least one audioInput was sent
         self._role: str | None = None
         self._generation_stage: str | None = None
 
@@ -216,7 +215,6 @@ class NovaSonicBridge:
             }
         )
         self._audio_started = True
-        self._audio_data_sent = False
 
     async def send_audio_base64_chunk(self, audio_base64: str):
         if not self.is_active:
@@ -235,19 +233,9 @@ class NovaSonicBridge:
                 }
             }
         )
-        self._audio_data_sent = True
 
     async def end_audio_input(self):
         if not self.is_active or not self._audio_started:
-            return
-
-        if not self._audio_data_sent:
-            # contentStart was sent but no audioInput data followed —
-            # Nova Sonic rejects contentEnd in this case, so just roll back state.
-            print("[bridge] end_audio_input: no data sent, skipping contentEnd")
-            self._audio_started = False
-            self._audio_data_sent = False
-            self.user_audio_content_name = str(uuid.uuid4())
             return
 
         await self._send_event(
@@ -261,7 +249,6 @@ class NovaSonicBridge:
             }
         )
         self._audio_started = False
-        self._audio_data_sent = False
         self.user_audio_content_name = str(uuid.uuid4())
 
     async def send_text_input(self, content: str):
