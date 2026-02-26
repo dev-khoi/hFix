@@ -5,6 +5,8 @@ import { parseAmplifyConfig } from "aws-amplify/utils";
 import { Amplify } from "aws-amplify";
 import outputs from "../amplify_outputs.json";
 import AmplifyProvider from "@/components/amplifyProvider";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,7 +32,15 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <AmplifyProvider>{children}</AmplifyProvider>{" "}
+        <AmplifyProvider>
+          <SidebarProvider>
+            <AppSidebar />
+            <main>
+              <SidebarTrigger />
+              {children}
+            </main>
+          </SidebarProvider>
+        </AmplifyProvider>{" "}
       </body>
     </html>
   );

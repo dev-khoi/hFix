@@ -1,10 +1,11 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: Lambda function for image upload and analysis
+
 Globals:
   Api:
     Cors:
-      AllowMethods: "'POST,OPTIONS'"
+      AllowMethods: "'GET,POST,OPTIONS'"
       AllowHeaders: "'Content-Type,Authorization,X-Amz-Date,X-Amz-Security-Token,X-Amz-User-Agent'"
       AllowOrigin: "'*'"
 
@@ -12,6 +13,7 @@ Resources:
   UploadImageFunction:
     Type: AWS::Serverless::Function
     Properties:
+    
       CodeUri: src/uploadImage/
       Handler: app.lambda_handler
       Runtime: python3.12
@@ -21,11 +23,24 @@ Resources:
           S3_BUCKET_NAME: !Ref UploadImageBucket
           TABLE_NAME: !Ref UploadImageTable
       Events:
+        # POST /items — image upload + AI analysis
         UploadImageApi:
           Type: Api
           Properties:
-            Path: /uploadImage
+            Path: /items
             Method: post
+        # GET /records — fetch user's records from DynamoDB
+        GetRecordsApi:
+          Type: Api
+          Properties:
+            Path: /records
+            Method: get
+        # GET /records/{id} — fetch single record with signed URLs
+        GetSingleRecordApi:
+          Type: Api
+          Properties:
+            Path: /records/{id}
+            Method: get
       Policies:
         - S3CrudPolicy:
             BucketName: !Ref UploadImageBucket
@@ -55,8 +70,14 @@ Resources:
 
 Outputs:
   UploadImageApi:
-    Description: "API Gateway endpoint URL for image upload function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/upload-image/"
+    Description: "API Gateway endpoint URL for image upload"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/items/"
+  GetRecordsApi:
+    Description: "API Gateway endpoint URL for fetching records"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/records/"
+  GetSingleRecordApi:
+    Description: "API Gateway endpoint URL for fetching single record"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/records/{id}/"
   UploadImageFunction:
     Description: "Upload Image Lambda Function ARN"
     Value: !GetAtt UploadImageFunction.Arn
