@@ -1,7 +1,12 @@
 "use client";
+import { Authenticator } from "@aws-amplify/ui-react";
+import "@aws-amplify/ui-react/styles.css";
+import "./App.css";
+import PictureUpload from "@/components/pictureUpload/pictureUpload";
+import { VoiceChat } from "@/components/VoiceChat";
 
 import { useEffect, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { get } from "aws-amplify/api";
 import Image from "next/image";
 
@@ -15,9 +20,8 @@ type RecordItem = {
   userId?: string | null;
 };
 
-function ChatContent() {
-  const searchParams = useSearchParams();
-  const selectedId = searchParams.get("id");
+function Home() {
+  const { selectedId } = useParams<{ selectedId: string }>();
   const [selectedItem, setSelectedItem] = useState<RecordItem | null>(null);
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -95,49 +99,38 @@ function ChatContent() {
       </div>
     );
   }
-
-  return (
-    <div className="h-full overflow-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold mb-2">
-          Chat {selectedItem.id.slice(0, 8)}
-        </h1>
-        <p className="text-sm text-gray-500">
-          {new Date(selectedItem.createdAt).toLocaleString()}
-        </p>
+  if (!analysis) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p className="text-gray-500">image analysis not found</p>
       </div>
+    );
+  }
 
-      {selectedItem.imageUrl && (
-        <div className="rounded-lg border border-gray-200 overflow-hidden">
-          <img
-            src={selectedItem.imageUrl}
-            alt="Uploaded image"
-            className="w-full max-w-2xl h-auto"
-          />
-        </div>
-      )}
-
-      {analysis && (
-        <div className="rounded-lg border border-gray-200 p-4 bg-gray-50">
-          <h3 className="font-semibold mb-2">Analysis</h3>
-          <p className="whitespace-pre-wrap text-sm">{analysis}</p>
-        </div>
-      )}
-
-      <details className="rounded-lg border border-gray-200 p-4">
-        <summary className="cursor-pointer font-semibold">Raw Data</summary>
-        <pre className="mt-2 text-xs overflow-auto">
-          {JSON.stringify(selectedItem, null, 2)}
-        </pre>
-      </details>
-    </div>
-  );
-}
-
-export default function ChatPage() {
   return (
-    <Suspense fallback={<div className="p-6">Loading...</div>}>
-      <ChatContent />
-    </Suspense>
+    <Authenticator>
+      {({ signOut, user }) => (
+        <div className="app-container">
+          <header className="app-header">
+            <div className="app-brand">
+              <h1>Nova Sonic 2</h1>
+              <span className="app-subtitle">AI Voice Assistant</span>
+            </div>
+            <div className="user-info">
+              <span>{user?.signInDetails?.loginId}</span>
+              <button onClick={signOut} className="sign-out-btn">
+                Sign out
+              </button>
+            </div>
+          </header>
+          <main className="app-main">
+            <PictureUpload />
+            <VoiceChat context={analysis} />
+          </main>
+        </div>
+      )}
+    </Authenticator>
   );
 }
+
+export default Home;

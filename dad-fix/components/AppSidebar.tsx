@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { get } from "aws-amplify/api";
 import {
   Sidebar,
@@ -25,8 +25,7 @@ export function AppSidebar() {
   const [items, setItems] = useState<RecordItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const selectedId = searchParams.get("id");
+  const { selectedId } = useParams<{ selectedId: string }>();
 
   useEffect(() => {
     async function fetchRecords() {
@@ -80,7 +79,7 @@ export function AppSidebar() {
               {items.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => router.push(`/chat?id=${item.id}`)}
+                  onClick={() => router.push(`/chat/${item.id}`)}
                   className={[
                     "w-full text-left px-3 py-2 rounded-lg transition-colors",
                     "hover:bg-gray-100 group flex items-start gap-2",

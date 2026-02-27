@@ -1,11 +1,17 @@
-import { useState, useCallback, useEffect, useRef, useLayoutEffect } from 'react';
-import { useNovaSonic } from '../hooks/useNovaSonic';
-import { useAudioRecorder } from '../hooks/useAudioRecorder';
-import { useAudioPlayer } from '../hooks/useAudioPlayer';
-import './VoiceChat.css';
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  useLayoutEffect,
+} from "react";
+import { useNovaSonic } from "../hooks/useNovaSonic";
+import { useAudioRecorder } from "../hooks/useAudioRecorder";
+import { useAudioPlayer } from "../hooks/useAudioPlayer";
+import "./VoiceChat.css";
 
-export function VoiceChat() {
-  const [statusText, setStatusText] = useState('Click mic to start talking');
+export function VoiceChat({ context }: { context: string }) {
+  const [statusText, setStatusText] = useState("Click mic to start talking");
   const hasStartedRef = useRef(false);
   const transcriptRef = useRef<HTMLDivElement>(null);
 
@@ -18,17 +24,25 @@ export function VoiceChat() {
     stopAudioInput,
     endSession,
     transcripts,
-  } = useNovaSonic({
-    onAudioOutput: (base64Audio) => {
-      queueAudio(base64Audio);
+  } = useNovaSonic(
+    {
+      onAudioOutput: (base64Audio) => {
+        queueAudio(base64Audio);
+      },
+      onError: (error) => {
+        console.error("Nova Sonic error:", error);
+        setStatusText(`Error: ${error}`);
+      },
     },
-    onError: (error) => {
-      console.error('Nova Sonic error:', error);
-      setStatusText(`Error: ${error}`);
-    },
-  });
+    context,
+  );
 
-  const { isRecording, startRecording, stopRecording, error: recorderError } = useAudioRecorder({
+  const {
+    isRecording,
+    startRecording,
+    stopRecording,
+    error: recorderError,
+  } = useAudioRecorder({
     onAudioData: (base64Audio) => {
       sendAudio(base64Audio);
     },
@@ -45,38 +59,43 @@ export function VoiceChat() {
   useEffect(() => {
     if (recorderError) {
       setStatusText(`Microphone error: ${recorderError}`);
-    } else if (sessionState === 'connecting') {
-      setStatusText('Connecting...');
-    } else if (sessionState === 'error') {
-      setStatusText('Connection error. Click mic to reconnect.');
+    } else if (sessionState === "connecting") {
+      setStatusText("Connecting...");
+    } else if (sessionState === "error") {
+      setStatusText("Connection error. Click mic to reconnect.");
     } else if (isRecording) {
-      setStatusText('🎤 Listening... (click mic to send)');
+      setStatusText("🎤 Listening... (click mic to send)");
     } else if (isPlaying) {
-      setStatusText('🔊 Assistant speaking...');
-    } else if (sessionState === 'connected') {
-      setStatusText('Click mic to start talking');
+      setStatusText("🔊 Assistant speaking...");
+    } else if (sessionState === "connected") {
+      setStatusText("Click mic to start talking");
     } else {
-      setStatusText('Click mic to start talking');
+      setStatusText("Click mic to start talking");
     }
   }, [sessionState, isRecording, isPlaying, recorderError]);
 
   // Initialize session on mount
   useEffect(() => {
-    console.log('[VoiceChat] Mount effect running, hasStarted:', hasStartedRef.current);
+    console.log(
+      "[VoiceChat] Mount effect running, hasStarted:",
+      hasStartedRef.current,
+    );
     if (hasStartedRef.current) {
-      console.log('[VoiceChat] Skipping duplicate session start (StrictMode)');
+      console.log("[VoiceChat] Skipping duplicate session start (StrictMode)");
       return;
     }
     hasStartedRef.current = true;
-    console.log('[VoiceChat] Calling startSession...');
-    startSession().then(() => {
-      console.log('[VoiceChat] startSession completed');
-    }).catch((err) => {
-      console.error('[VoiceChat] startSession error:', err);
-    });
+    console.log("[VoiceChat] Calling startSession...");
+    startSession()
+      .then(() => {
+        console.log("[VoiceChat] startSession completed");
+      })
+      .catch((err) => {
+        console.error("[VoiceChat] startSession error:", err);
+      });
 
     return () => {
-      console.log('[VoiceChat] Cleanup - ending session');
+      console.log("[VoiceChat] Cleanup - ending session");
       hasStartedRef.current = false;
       endSession();
     };
@@ -86,49 +105,61 @@ export function VoiceChat() {
   const handleMicClick = useCallback(async () => {
     // If currently recording, stop
     if (isRecording) {
-      console.log('[VoiceChat] Stopping recording');
+      console.log("[VoiceChat] Stopping recording");
       stopRecording();
       stopAudioInput();
       return;
     }
 
     // If not connected, try to reconnect
-    if (sessionState !== 'connected') {
-      if (sessionState === 'disconnected' || sessionState === 'error') {
+    if (sessionState !== "connected") {
+      if (sessionState === "disconnected" || sessionState === "error") {
         await startSession();
       }
       return;
     }
 
     // Start recording
-    console.log('[VoiceChat] Starting recording');
+    console.log("[VoiceChat] Starting recording");
     stopAudio(); // Stop any playing audio when user starts speaking
     await startRecording();
-  }, [isRecording, sessionState, startSession, startRecording, stopRecording, stopAudioInput, stopAudio]);
+  }, [
+    isRecording,
+    sessionState,
+    startSession,
+    startRecording,
+    stopRecording,
+    stopAudioInput,
+    stopAudio,
+  ]);
 
   const getStatusIndicatorClass = () => {
     switch (sessionState) {
-      case 'connected':
-        return 'status-indicator connected';
-      case 'connecting':
-        return 'status-indicator connecting';
-      case 'error':
-        return 'status-indicator error';
+      case "connected":
+        return "status-indicator connected";
+      case "connecting":
+        return "status-indicator connecting";
+      case "error":
+        return "status-indicator error";
       default:
-        return 'status-indicator disconnected';
+        return "status-indicator disconnected";
     }
   };
 
   const getMicButtonClass = () => {
-    let classes = 'mic-button';
+    let classes = "mic-button";
     if (isRecording) {
-      classes += ' recording';
+      classes += " recording";
     }
     if (isPlaying) {
-      classes += ' playing';
+      classes += " playing";
     }
-    if (sessionState !== 'connected' && sessionState !== 'error' && sessionState !== 'disconnected') {
-      classes += ' disabled';
+    if (
+      sessionState !== "connected" &&
+      sessionState !== "error" &&
+      sessionState !== "disconnected"
+    ) {
+      classes += " disabled";
     }
     return classes;
   };
@@ -138,7 +169,7 @@ export function VoiceChat() {
       <div className="status-bar">
         <span className={getStatusIndicatorClass()}></span>
         <span className="status-text">
-          {sessionState === 'connected' ? 'Connected' : sessionState}
+          {sessionState === "connected" ? "Connected" : sessionState}
         </span>
       </div>
 
@@ -151,7 +182,7 @@ export function VoiceChat() {
           transcripts.map((t, index) => (
             <div key={index} className={`transcript-message ${t.role}`}>
               <span className="role-label">
-                {t.role === 'user' ? 'You' : 'Assistant'}
+                {t.role === "user" ? "You" : "Assistant"}
               </span>
               <p className="message-content">{t.content}</p>
             </div>
@@ -160,7 +191,8 @@ export function VoiceChat() {
       </div>
 
       <div className="controls">
-        <p className={`instruction-text ${isRecording ? 'listening' : ''} ${isPlaying ? 'speaking' : ''}`}>
+        <p
+          className={`instruction-text ${isRecording ? "listening" : ""} ${isPlaying ? "speaking" : ""}`}>
           {statusText}
         </p>
 
@@ -168,15 +200,13 @@ export function VoiceChat() {
           className={getMicButtonClass()}
           onClick={handleMicClick}
           onContextMenu={(e: any) => e.preventDefault()}
-          disabled={sessionState === 'connecting'}
-        >
+          disabled={sessionState === "connecting"}>
           <svg
             className="mic-icon"
             viewBox="0 0 24 24"
             fill="currentColor"
             width="48"
-            height="48"
-          >
+            height="48">
             {isRecording ? (
               // Stop icon when recording
               <rect x="6" y="6" width="12" height="12" rx="2" />

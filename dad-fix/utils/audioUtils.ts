@@ -26,7 +26,11 @@ export function float32ToPcm16(float32Array: Float32Array): Uint8Array {
  * @returns Float32Array of audio samples in range [-1, 1]
  */
 export function pcm16ToFloat32(pcm16: Uint8Array): Float32Array {
-  const int16Array = new Int16Array(pcm16.buffer, pcm16.byteOffset, pcm16.byteLength / 2);
+  const int16Array = new Int16Array(
+    pcm16.buffer,
+    pcm16.byteOffset,
+    pcm16.byteLength / 2,
+  );
   const float32Array = new Float32Array(int16Array.length);
 
   for (let i = 0; i < int16Array.length; i++) {
@@ -47,7 +51,7 @@ export function pcm16ToFloat32(pcm16: Uint8Array): Float32Array {
 export function resampleAudio(
   audioData: Float32Array,
   sourceSampleRate: number,
-  targetSampleRate: number
+  targetSampleRate: number,
 ): Float32Array {
   if (sourceSampleRate === targetSampleRate) {
     return audioData;
@@ -64,7 +68,8 @@ export function resampleAudio(
     const t = srcIndex - srcIndexFloor;
 
     // Linear interpolation
-    result[i] = audioData[srcIndexFloor] * (1 - t) + audioData[srcIndexCeil] * t;
+    result[i] =
+      audioData[srcIndexFloor] * (1 - t) + audioData[srcIndexCeil] * t;
   }
 
   return result;
@@ -76,7 +81,7 @@ export function resampleAudio(
  * @returns Base64 encoded string
  */
 export function uint8ArrayToBase64(uint8Array: Uint8Array): string {
-  let binary = '';
+  let binary = "";
   for (let i = 0; i < uint8Array.length; i++) {
     binary += String.fromCharCode(uint8Array[i]);
   }
@@ -107,10 +112,14 @@ export function base64ToUint8Array(base64: string): Uint8Array {
 export function createAudioBufferFromPcm(
   audioContext: AudioContext,
   pcmData: Uint8Array,
-  sampleRate: number
+  sampleRate: number,
 ): AudioBuffer {
   const float32Data = pcm16ToFloat32(pcmData);
-  const audioBuffer = audioContext.createBuffer(1, float32Data.length, sampleRate);
+  const audioBuffer = audioContext.createBuffer(
+    1,
+    float32Data.length,
+    sampleRate,
+  );
   audioBuffer.getChannelData(0).set(float32Data);
   return audioBuffer;
 }
