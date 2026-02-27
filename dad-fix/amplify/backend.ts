@@ -17,7 +17,6 @@ import { Bucket } from "aws-cdk-lib/aws-s3";
 const backend = defineBackend({
   auth,
   myApiFunction,
-  // ✅ dynamoFunction removed — SAM Lambda handles everything
 });
 
 // Grant authenticated users permission to invoke Nova Sonic via Bedrock
@@ -34,16 +33,16 @@ backend.auth.resources.authenticatedUserIamRole.addToPrincipalPolicy(
 const apiStack = backend.createStack("api-stack");
 
 // Reference existing DynamoDB table
-const existingTable = Table.fromTableArn(
-  apiStack,
-  "ExistingDynamoTable",
-  "arn:aws:dynamodb:us-east-1:931324892361:table/sam-app-UploadImageTable-1RPFIG5TI3BCO",
-);
-const existingBucket = Bucket.fromBucketArn(
-  apiStack,
-  "ExistingUploadBucket",
-  "arn:aws:s3:::sam-app-uploadimagebucket-podvwpwn2apf",
-);
+// const existingTable = Table.fromTableArn(
+//   apiStack,
+//   "ExistingDynamoTable",
+//   "arn:aws:dynamodb:us-east-1:931324892361:table/sam-app-UploadImageTable-1RPFIG5TI3BCO",
+// );
+// const existingBucket = Bucket.fromBucketArn(
+//   apiStack,
+//   "ExistingUploadBucket",
+//   "arn:aws:s3:::sam-app-uploadimagebucket-podvwpwn2apf",
+// );
 const existingLambda = Function.fromFunctionArn(
   apiStack,
   "ExistingLambda",

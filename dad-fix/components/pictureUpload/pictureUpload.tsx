@@ -8,7 +8,7 @@ import {
 } from "react";
 import { uploadImage } from "../../utils/fileHandleUtils";
 
-const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp"];
+const ACCEPTED_TYPES = ["image/png", "image/jpeg"];
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 
 export default function PictureUpload() {
@@ -24,7 +24,7 @@ export default function PictureUpload() {
   function handleFile(file: File) {
     setError(null);
     if (!ACCEPTED_TYPES.includes(file.type)) {
-      setError("Only PNG, JPG, and WEBP images are supported.");
+      setError("Only PNG and JPG images are supported.");
       return;
     }
     if (file.size > MAX_BYTES) {
