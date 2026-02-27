@@ -7,6 +7,7 @@ import {
   type ChangeEvent,
 } from "react";
 import { uploadImage } from "../../utils/fileHandleUtils";
+import { useRouter } from "next/navigation";
 
 const ACCEPTED_TYPES = ["image/png", "image/jpeg"];
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
@@ -20,6 +21,7 @@ export default function PictureUpload() {
   const inputRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<File | null>(null);
   const dragCounter = useRef(0);
+  const router = useRouter();
 
   function handleFile(file: File) {
     setError(null);
@@ -171,9 +173,13 @@ export default function PictureUpload() {
             if (fileRef.current) {
               setIsUploading(true);
               try {
-                await uploadImage(fileRef.current);
-              } finally {
+                const { id } = await uploadImage(fileRef.current);
+
                 setIsUploading(false);
+                router.push(`/chat/${id}`);
+                router.refresh();
+              } catch (e) {
+                console.error(e);
               }
             }
           }}

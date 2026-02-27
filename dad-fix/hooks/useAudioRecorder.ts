@@ -1,5 +1,9 @@
-import { useRef, useCallback, useState } from 'react';
-import { float32ToPcm16, resampleAudio, uint8ArrayToBase64 } from '../utils/audioUtils';
+import { useRef, useCallback, useState } from "react";
+import {
+  float32ToPcm16,
+  resampleAudio,
+  uint8ArrayToBase64,
+} from "../utils/audioUtils";
 
 const TARGET_SAMPLE_RATE = 16000; // Nova Sonic requires 16kHz
 
@@ -45,7 +49,9 @@ interface UseAudioRecorderReturn {
   error: string | null;
 }
 
-export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudioRecorderReturn {
+export function useAudioRecorder(
+  options: UseAudioRecorderOptions = {},
+): UseAudioRecorderReturn {
   const { onAudioData } = options;
 
   const [isRecording, setIsRecording] = useState(false);
@@ -60,28 +66,39 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
   const startRecording = useCallback(async () => {
     try {
       setError(null);
-      console.log('[AudioRecorder] Starting recording...');
+      console.log("[AudioRecorder] Starting recording...");
 
       // Check if mediaDevices API is available
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('MediaDevices API not available. Please use HTTPS or localhost.');
+        throw new Error(
+          "MediaDevices API not available. Please use HTTPS or localhost.",
+        );
       }
 
       // List available audio devices for debugging
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
-        const audioInputs = devices.filter(d => d.kind === 'audioinput');
-        console.log('[AudioRecorder] Available audio input devices:', audioInputs.length);
-        audioInputs.forEach((d, i) => console.log(`  [${i}] ${d.label || 'Unnamed device'} (${d.deviceId.substring(0, 8)}...)`));
+        const audioInputs = devices.filter((d) => d.kind === "audioinput");
+        console.log(
+          "[AudioRecorder] Available audio input devices:",
+          audioInputs.length,
+        );
+        audioInputs.forEach((d, i) =>
+          console.log(
+            `  [${i}] ${d.label || "Unnamed device"} (${d.deviceId.substring(0, 8)}...)`,
+          ),
+        );
         if (audioInputs.length === 0) {
-          throw new Error('No microphone detected. Please connect a microphone.');
+          throw new Error(
+            "No microphone detected. Please connect a microphone.",
+          );
         }
       } catch (enumError) {
-        console.warn('[AudioRecorder] Could not enumerate devices:', enumError);
+        console.warn("[AudioRecorder] Could not enumerate devices:", enumError);
       }
 
       // Request microphone access
-      console.log('[AudioRecorder] Requesting microphone access...');
+      console.log("[AudioRecorder] Requesting microphone access...");
       let stream: MediaStream;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
@@ -93,52 +110,70 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
           },
         });
       } catch (mediaError: any) {
-        console.error('[AudioRecorder] getUserMedia error:', mediaError);
-        if (mediaError.name === 'NotFoundError' || mediaError.message?.includes('not be found')) {
-          throw new Error('No microphone found. Please connect a microphone and try again.');
-        } else if (mediaError.name === 'NotAllowedError' || mediaError.name === 'PermissionDeniedError') {
-          throw new Error('Microphone access denied. Please allow microphone access in browser settings.');
-        } else if (mediaError.name === 'NotReadableError') {
-          throw new Error('Microphone is in use by another application.');
+        console.error("[AudioRecorder] getUserMedia error:", mediaError);
+        if (
+          mediaError.name === "NotFoundError" ||
+          mediaError.message?.includes("not be found")
+        ) {
+          throw new Error(
+            "No microphone found. Please connect a microphone and try again.",
+          );
+        } else if (
+          mediaError.name === "NotAllowedError" ||
+          mediaError.name === "PermissionDeniedError"
+        ) {
+          throw new Error(
+            "Microphone access denied. Please allow microphone access in browser settings.",
+          );
+        } else if (mediaError.name === "NotReadableError") {
+          throw new Error("Microphone is in use by another application.");
         }
         throw mediaError;
       }
-      console.log('[AudioRecorder] Microphone access granted');
+      console.log("[AudioRecorder] Microphone access granted");
       streamRef.current = stream;
 
       // Create audio context
-      console.log('[AudioRecorder] Creating AudioContext...');
+      console.log("[AudioRecorder] Creating AudioContext...");
       const audioContext = new AudioContext();
-      console.log('[AudioRecorder] AudioContext created, sampleRate:', audioContext.sampleRate);
+      console.log(
+        "[AudioRecorder] AudioContext created, sampleRate:",
+        audioContext.sampleRate,
+      );
       audioContextRef.current = audioContext;
       sourceSampleRateRef.current = audioContext.sampleRate;
 
       // Load AudioWorklet processor using inline Blob URL (avoids CORS issues)
-      const blob = new Blob([audioWorkletCode], { type: 'application/javascript' });
+      const blob = new Blob([audioWorkletCode], {
+        type: "application/javascript",
+      });
       const workletUrl = URL.createObjectURL(blob);
-      console.log('[AudioRecorder] Loading AudioWorklet from blob URL');
+      console.log("[AudioRecorder] Loading AudioWorklet from blob URL");
       await audioContext.audioWorklet.addModule(workletUrl);
       URL.revokeObjectURL(workletUrl); // Clean up blob URL after loading
-      console.log('[AudioRecorder] AudioWorklet loaded successfully');
+      console.log("[AudioRecorder] AudioWorklet loaded successfully");
 
       // Create source node from microphone stream
       const sourceNode = audioContext.createMediaStreamSource(stream);
       sourceNodeRef.current = sourceNode;
 
       // Create worklet node
-      const workletNode = new AudioWorkletNode(audioContext, 'audio-capture-processor');
+      const workletNode = new AudioWorkletNode(
+        audioContext,
+        "audio-capture-processor",
+      );
       workletNodeRef.current = workletNode;
 
       // Handle audio data from worklet
       workletNode.port.onmessage = (event) => {
-        if (event.data.type === 'audio' && onAudioData) {
+        if (event.data.type === "audio" && onAudioData) {
           const audioData = event.data.audioData as Float32Array;
 
           // Resample to 16kHz if needed
           const resampledData = resampleAudio(
             audioData,
             sourceSampleRateRef.current,
-            TARGET_SAMPLE_RATE
+            TARGET_SAMPLE_RATE,
           );
 
           // Convert to 16-bit PCM
@@ -156,17 +191,20 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
 
       setIsRecording(true);
     } catch (err) {
-      console.error('[AudioRecorder] Error starting recording:', err);
-      const message = err instanceof Error ? `${err.name}: ${err.message}` : 'Failed to start recording';
+      console.error("[AudioRecorder] Error starting recording:", err);
+      const message =
+        err instanceof Error
+          ? `${err.name}: ${err.message}`
+          : "Failed to start recording";
       setError(message);
     }
   }, [onAudioData]);
 
   const stopRecording = useCallback(() => {
-    console.log('[AudioRecorder] stopRecording called');
+    console.log("[AudioRecorder] stopRecording called");
     // Disconnect and clean up worklet node
     if (workletNodeRef.current) {
-      console.log('[AudioRecorder] Disconnecting worklet node');
+      console.log("[AudioRecorder] Disconnecting worklet node");
       workletNodeRef.current.disconnect();
       workletNodeRef.current = null;
     }
@@ -190,7 +228,7 @@ export function useAudioRecorder(options: UseAudioRecorderOptions = {}): UseAudi
     }
 
     setIsRecording(false);
-    console.log('[AudioRecorder] Recording stopped');
+    console.log("[AudioRecorder] Recording stopped");
   }, []);
 
   return {

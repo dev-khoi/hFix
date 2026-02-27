@@ -1,28 +1,27 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./../globals.css";
-import { Authenticator } from "@aws-amplify/ui-react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
-export const metadata: Metadata = {
-  title: "Chat with ai",
-  description: "Page that talks to ai to fix",
-};
-
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <div>
-        <SidebarTrigger />
+    <div className="min-h-screen w-full">
+      <SidebarProvider>
+        <div className="flex min-h-screen w-full">
+          {/* Sidebar */}
+          <AppSidebar />
 
-        {children}
-      </div>
-    </SidebarProvider>
+          {/* Main content area */}
+          <div className="flex flex-col flex-1">
+            <SidebarTrigger />
+
+            {/* Page content */}
+            <main className="flex-1 w-full">{children}</main>
+          </div>
+        </div>
+      </SidebarProvider>
+    </div>
   );
 }
