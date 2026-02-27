@@ -1,7 +1,6 @@
 "use client";
 import { Authenticator } from "@aws-amplify/ui-react";
 import "@aws-amplify/ui-react/styles.css";
-import "./App.css";
 import PictureUpload from "@/components/pictureUpload/pictureUpload";
 import { VoiceChat } from "@/components/VoiceChat";
 import { Button } from "@/components/ui/button";
@@ -141,67 +140,39 @@ function Home() {
   }
 
   return (
-    <Authenticator>
-      {({ signOut, user }) => (
-        <div className="flex flex-col min-h-screen w-full bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
-          {/* Header */}
-          <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950/50 backdrop-blur supports-[backdrop-filter]:bg-white/95 dark:supports-[backdrop-filter]:bg-slate-950/75 sticky top-0 z-10 shadow-sm">
-            <div className="flex justify-between items-center px-4 sm:px-6 lg:px-8 py-4">
-              <div className="flex flex-col gap-0.5">
-                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
-                  Nova Sonic 2
-                </h1>
-                <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium uppercase tracking-widest">
-                  AI Voice Assistant
-                </span>
+    <div className="flex flex-col min-h-screen w-full bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950">
+      {/* Header */}
+      
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto w-full">
+        <div className="w-full h-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+          {/* Image Section */}
+          <section className="w-full bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
+            <h2 className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-white mb-4">
+              Uploaded Image
+            </h2>
+            {imageUrl && (
+              <div className="relative w-full h-auto rounded-md overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                <img
+                  src={imageUrl}
+                  alt="Uploaded image"
+                  className="w-full h-auto object-contain max-h-[60vh]"
+                />
               </div>
+            )}
+          </section>
 
-              <div className="flex items-center gap-3 sm:gap-4">
-                <span className="text-sm text-slate-600 dark:text-slate-300 hidden sm:inline">
-                  {user?.signInDetails?.loginId}
-                </span>
-                <Button
-                  onClick={signOut}
-                  variant="outline"
-                  size="sm"
-                  className="border-orange-600 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/20 dark:border-orange-500 dark:text-orange-400">
-                  Sign out
-                </Button>
-              </div>
-            </div>
-          </header>
-
-          {/* Main Content */}
-          <main className="flex-1 overflow-y-auto w-full">
-            <div className="w-full h-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
-              {/* Image Section */}
-              <section className="w-full bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
-                <h2 className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-white mb-4">
-                  Uploaded Image
-                </h2>
-                {imageUrl && (
-                  <div className="relative w-full h-auto rounded-md overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                    <img
-                      src={imageUrl}
-                      alt="Uploaded image"
-                      className="w-full h-auto object-contain max-h-[60vh]"
-                    />
-                  </div>
-                )}
-              </section>
-
-              {/* Voice Chat Section */}
-              <section className="w-full bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
-                <h2 className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-white mb-4">
-                  Chat with AI Assistant
-                </h2>
-                <VoiceChat context={analysis} />
-              </section>
-            </div>
-          </main>
+          {/* Voice Chat Section */}
+          <section className="w-full bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-4 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
+            <h2 className="text-lg sm:text-xl font-semibold text-slate-900 dark:text-white mb-4">
+              Chat with AI Assistant
+            </h2>
+            <VoiceChat context={analysis} />
+          </section>
         </div>
-      )}
-    </Authenticator>
+      </main>
+    </div>  
   );
 }
 

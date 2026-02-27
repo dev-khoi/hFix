@@ -7,7 +7,9 @@ export default function Home() {
             D
           </div>
           <div>
-            <p className="text-lg font-semibold tracking-tight">Dad-AI</p>
+            <p className="ttext-2xl sm:text-3xl font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
+              Dad-AI
+            </p>
             <p className="text-sm text-neutral-600">
               Voice-first repair guidance
             </p>
