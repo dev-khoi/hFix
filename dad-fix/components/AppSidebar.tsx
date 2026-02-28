@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { get } from "aws-amplify/api";
+import { useRefresh } from "./RefreshContext";
 import {
   Sidebar,
   SidebarContent,
@@ -26,6 +27,7 @@ export function AppSidebar() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { selectedId } = useParams<{ selectedId: string }>();
+  const { refreshTrigger } = useRefresh();
 
   useEffect(() => {
     async function fetchRecords() {
@@ -36,7 +38,14 @@ export function AppSidebar() {
         }).response;
 
         const data = (await response.body.json()) as RecordItem[];
-        setItems(Array.isArray(data) ? data : []);
+        const sortedData = Array.isArray(data)
+          ? data.sort(
+              (a, b) =>
+                new Date(b.createdAt).getTime() -
+                new Date(a.createdAt).getTime(),
+            )
+          : [];
+        setItems(sortedData);
       } catch (err) {
         console.error("Failed to load records:", err);
       } finally {
@@ -45,13 +54,13 @@ export function AppSidebar() {
     }
 
     fetchRecords();
-  }, []);
+  }, [refreshTrigger]);
 
   const formatDate = (dateStr: string) => {
     try {
       const date = new Date(dateStr);
       const now = new Date();
-      const diffMs = now.getTime() - date.getTime();
+      const diffMs = now.getTime() - date.getTime() + 7000;
       const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
       if (diffDays === 0) return "Today";

@@ -3,6 +3,7 @@
 import { Amplify } from "aws-amplify";
 import { parseAmplifyConfig } from "aws-amplify/utils";
 import outputs from "../amplify_outputs.json";
+import { RefreshProvider } from "./RefreshContext";
 
 const amplifyConfig = parseAmplifyConfig(outputs);
 
@@ -24,5 +25,5 @@ export default function AmplifyProvider({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return <RefreshProvider>{children}</RefreshProvider>;
 }

@@ -170,6 +170,7 @@ export function VoiceChat({ context }: { context: string }) {
         <span className={getStatusIndicatorClass()}></span>
         <span className="status-text">
           {sessionState === "connected" ? "Connected" : sessionState}
+          {sessionState === "error" ? "Click on the microphone button" : ""}
         </span>
       </div>
 

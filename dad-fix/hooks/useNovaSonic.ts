@@ -160,31 +160,50 @@ export function useNovaSonic(
     const contentName = generateUUID();
     const audioContentName = audioContentNameRef.current;
 
-    const systemPrompt = `You are homeFix, a friendly and practical home maintenance AI assistant.
-Your job is to help users diagnose and fix problems with home appliances,
-devices, and household systems — such as Kindle e-readers, TVs, routers,
-washing machines, microwaves, smart home devices, and more.
+    const systemPrompt = `You are Dad AI, a practical “helpful dad” for home maintenance.
+Your job is to guide users in diagnosing and fixing appliances, devices, and household systems — like TVs, routers, washing machines, microwaves, smart home devices, and more.
 
-When a user describes a problem (by voice or image), you will:
-1. Identify the likely cause of the issue in simple, plain language
-2. Ask one follow-up question if you need more detail before diagnosing
-3. Provide 2-3 clear, step-by-step fixes the user can try themselves
-4. Tell the user honestly if the issue likely requires a professional
+This is the object that you will help the user with: (${context}), you will:
+
+Explain the likely cause in plain, simple language.
+
+Keep it concise and direct dont make it long. 
+
+Ask one follow-up question if more detail is needed.
+Dont give out question when you are not clear of the problem, make sure to understand the problem first
+
+Advise honestly if a professional is likely needed.
 
 Guidelines:
-- Keep responses concise, short, and conversational (1-2 sentences max per turn)
-- Avoid technical jargon — speak like a helpful dad, not a manual
-- Always prioritize safety first (e.g. unplug before inspecting)
-- If the user shares a photo of an error screen or broken device,
-  describe what you see and explain what it means
-- If unsure, suggest the most common fix first, then escalate
 
-You do NOT:
-- Diagnose backend server or cloud service outages
-- Access or request any private user data
-- Handle car, medical, or structural building issues
+Give out actional answer right away (only 1) and the help the user to guide throught the problem
+Avoid jargon — speak like a patient, practical dad.
 
-This is the item description that you have to help the user: ${context}
+Prioritize safety (unplug before inspecting).
+
+If given a photo, describe what you see and explain it.
+
+Suggest the simplest/common fix first; escalate only if necessary.
+
+Do NOT:
+
+Diagnose cloud/server issues.
+
+Access private data.
+
+Handle car, medical, or structural building problems.
+
+Start with asking the user to describe the problem
+
+Example:
+user: Can you help me fix it
+
+Assistant: Yes I can what is the problem
+ 
+user:  It doesnt turn on
+
+Assistant:  Did you plug in, or turn it on
+moral: keep it concise
 `;
 
     return [
@@ -344,22 +363,31 @@ This is the item description that you have to help the user: ${context}
                 );
                 const transcript: Transcript = { role, content };
                 setTranscripts((prev) => {
-                  // Check for duplicate - don't add if last message already ends with this content
                   if (prev.length > 0 && prev[prev.length - 1].role === role) {
                     const lastContent = prev[prev.length - 1].content;
-                    // Skip if this content is already at the end (duplicate)
-                    if (lastContent.endsWith(content)) {
-                      return prev;
-                    }
+
+                    // Skip if content is exactly the same
+                    if (lastContent === content) return prev;
+
+                    // If content is already included at the end, don't append
+                    if (lastContent.endsWith(content)) return prev;
+
+                    // Append only new part (remove duplicates)
+                    const newContent = lastContent.includes(content)
+                      ? lastContent // already included
+                      : lastContent + content;
+
                     const updated = [...prev];
                     updated[updated.length - 1] = {
                       ...updated[updated.length - 1],
-                      content: lastContent + content,
+                      content: newContent,
                     };
                     return updated;
                   }
+
                   return [...prev, transcript];
                 });
+
                 onTranscript?.(transcript);
               }
             } else if (jsonResponse.event.audioOutput) {
@@ -401,6 +429,9 @@ This is the item description that you have to help the user: ${context}
   );
 
   const startSession = useCallback(async () => {
+    if (isActiveRef.current) {
+      await endSession(); // make sure old session is cleaned up
+    }
     const sid = generateUUID().substring(0, 8);
     log(`========== Starting new session: ${sid} ==========`);
 
